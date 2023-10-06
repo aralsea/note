@@ -1,0 +1,18 @@
+{
+	// build settings
+	"latex-workshop.latex.recipe.default": "latexmk",
+	"latex-workshop.latex.tools": [
+		{
+			"name": "latexmk",
+			"command": "latexmk",
+			"args": [
+				"-r",
+				"/Users/araihayato/Documents/latex-documents/ja/test/.latexmkrc",
+				"-synctex=1",
+				"%DOC%"
+			],
+			"env": {}
+		},
+	],
+	"latex-workshop.latex.outDir": "/Users/araihayato/Documents/latex-documents/ja/test/out"
+}
