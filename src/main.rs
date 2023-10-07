@@ -187,8 +187,16 @@ fn prepare_tex_file(project: &Project) -> std::io::Result<()> {
         )
         .to_string();
 
-    let destination_file_path = project.path.join("src/note.tex");
+    // bibliographyを書き換える
+    let re = Regex::new(r"\\bibliography\{[^}]*\}").unwrap(); // \bibliography{.*}にマッチするregex
+    file_content = re
+        .replace_all(
+            &file_content,
+            &format!(r"\bibliography{{../bib/{}}}", project.name),
+        )
+        .to_string();
 
+    let destination_file_path = project.path.join("src/note.tex");
     let mut file = fs::File::create(destination_file_path)?;
     file.write_all(file_content.as_bytes());
     return Ok(());
@@ -199,7 +207,7 @@ fn prepare_bib_file(project: &Project) -> std::io::Result<()> {
         Language::Japanese => JA_BIB,
     };
 
-    let destination_file_path = project.path.join("bib/note.bib");
+    let destination_file_path = project.path.join(format!("bib/{}.bib", project.name));
 
     let mut file = fs::File::create(destination_file_path)?;
     file.write_all(file_content.as_bytes());
