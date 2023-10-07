@@ -5,6 +5,7 @@ use std::fs;
 use std::io::BufReader;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::io::prelude::*;
 fn main() {
     let args:Vec<String> = env::args().collect();
 
@@ -22,8 +23,10 @@ fn create_project(project_name:&str, language:Language){
         Err(e) => panic!("{e}"),
     }
 
-    let setting = get_settings_json(project_name, language);
-    println!("{:?}", setting);
+    let current_path = env::current_dir().unwrap();
+    let project_path = current_path.join(project_name);
+    let setting = get_settings_json(project_path.as_path(), language);
+    write_file(project_path.as_path(), setting);
  }
 
 
@@ -65,7 +68,7 @@ struct LatexTool{
     env: HashMap<String, String>,
 }
 
-fn get_settings_json(project_name:&str, language:Language)->VscodeSetting{
+fn get_settings_json(project_path: &Path, language:Language)->VscodeSetting{
     let file_name = match language{
         Language::English => panic!("English configuration is not implemented."),
         Language::Japanese => "templates/ja/ja_project/.vscode/settings.json",
@@ -75,8 +78,7 @@ fn get_settings_json(project_name:&str, language:Language)->VscodeSetting{
     let reader = BufReader::new(file);
     let mut setting: VscodeSetting = serde_json::from_reader(reader).unwrap();
 
-    let current_path = env::current_dir().unwrap();
-    let project_path = current_path.join(project_name);
+  
 
     //出力ディレクトリを設定
     setting.latex_workshop_latex_outdir = project_path.join("out").into_os_string().into_string().unwrap();
@@ -97,12 +99,12 @@ fn get_settings_json(project_name:&str, language:Language)->VscodeSetting{
 
     return setting;
 }
-// fn write_file(project_path: Path, setting: VscodeSetting) -> std::io::Result<()> {
-//     // serialized
-//     let serialized: String = serde_json::to_string(&setting).unwrap();
-
-//     // write
-//     let mut file = fs::File::create(project_path.join(".vscode/settings.json"))?;
-//     file.write_all(serialized.as_bytes())?;
-//     Ok(())
-// }
+fn write_file(project_path:&Path, setting: VscodeSetting) -> std::io::Result<()> {
+    //serialized
+    let serialized: String = serde_json::to_string(&setting).unwrap();
+    println!("{serialized}");
+    //write
+    let mut file = fs::File::create(project_path.join(".vscode/settings.json"))?;
+    file.write_all(serialized.as_bytes())?;
+    Ok(())
+}
