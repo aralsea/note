@@ -7,12 +7,12 @@
 			"command": "latexmk",
 			"args": [
 				"-r",
-				"/Users/araihayato/Documents/my-tools/note/templates/ja/first/.latexmkrc",
+				"path to latexmkrc",
 				"-synctex=1",
 				"%DOC%"
 			],
 			"env": {}
 		}
 	],
-	"latex-workshop.latex.outDir": "/Users/araihayato/Documents/my-tools/note/templates/ja/first/out"
+	"latex-workshop.latex.outDir": "path to output directory"
 }

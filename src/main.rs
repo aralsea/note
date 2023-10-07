@@ -12,6 +12,7 @@ const JA_SETTINGS_JSON: &str = include_str!("../templates/ja/.vscode/settings.js
 const JA_LATEXMKRC: &str = include_str!("../templates/ja/.latexmkrc");
 const JA_NOTE: &str = include_str!("../templates/ja/src/note.tex");
 const JA_BIB: &str = include_str!("../templates/ja/bib/note.bib");
+const JA_GITIGNORE: &str = include_str!("../templates/ja/.gitignore");
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -44,6 +45,7 @@ fn create_project(project_name: &str, language: Language) {
     prepare_latexmkrc(&project);
     prepare_tex_file(&project);
     prepare_bib_file(&project);
+    prepare_gitignore(&project);
 }
 
 fn prepare_directories(project: &Project) -> Result<(), std::io::Error> {
@@ -171,6 +173,18 @@ fn prepare_bib_file(project: &Project) -> Result<(), std::io::Error> {
     };
 
     let destination_file_path = project.path.join("bib/note.bib");
+
+    let mut file = fs::File::create(destination_file_path)?;
+    file.write_all(file_content.as_bytes());
+    return Ok(());
+}
+fn prepare_gitignore(project: &Project) -> Result<(), std::io::Error> {
+    let file_content = match project.language {
+        Language::English => panic!("English configuration is not implemented."),
+        Language::Japanese => JA_GITIGNORE,
+    };
+
+    let destination_file_path = project.path.join(".gitignore");
 
     let mut file = fs::File::create(destination_file_path)?;
     file.write_all(file_content.as_bytes());
