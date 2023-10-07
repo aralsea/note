@@ -6,9 +6,11 @@ use std::fs;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::Path;
+use std::path::PathBuf;
 
-const JA_SETTINGS_JSON: &str = include_str!("../templates/ja/ja-project/.vscode/settings.json");
-const JA_LATEXMKRC: &str = include_str!("../templates/ja/ja-project/.latexmkrc");
+const JA_SETTINGS_JSON: &str = include_str!("../templates/ja/.vscode/settings.json");
+const JA_LATEXMKRC: &str = include_str!("../templates/ja/.latexmkrc");
+const JA_NOTE: &str = include_str!("../templates/ja/src/note.tex");
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -20,38 +22,51 @@ fn main() {
     }
 }
 
+struct Project {
+    name: String,
+    path: PathBuf,
+    language: Language,
+}
 fn create_project(project_name: &str, language: Language) {
-    match prepare_directories(project_name) {
+    let current_path = env::current_dir().unwrap();
+    let project = Project {
+        name: project_name.to_string(),
+        path: current_path.join(project_name),
+        language: language,
+    };
+    match prepare_directories(&project) {
         Ok(_) => println!("succeeded!"),
         Err(e) => panic!("{e}"),
     }
 
-    let current_path = env::current_dir().unwrap();
-    let project_path = current_path.join(project_name);
-    prepare_settings_json(&project_path, &language);
-    prepare_latexmkrc(&project_path, &language);
+    prepare_settings_json(&project);
+    prepare_latexmkrc(&project);
 }
 
-fn prepare_directories(project_name: &str) -> Result<(), std::io::Error> {
-    match fs::create_dir(project_name) {
+fn prepare_directories(project: &Project) -> Result<(), std::io::Error> {
+    match fs::create_dir(&project.path) {
         Ok(_) => println!("ok"),
         Err(e) => panic!("{e}"),
     }
 
-    for sub_directory in ["/.vscode", "src", "out", "bib"] {
-        fs::create_dir_all(format!("{project_name}/{sub_directory}")).unwrap_or_else(|why| {
+    for sub_directory in [".vscode", "src", "out", "bib"] {
+        fs::create_dir(project.path.join(sub_directory)).unwrap_or_else(|why| {
             println!("! {:?}", why.kind());
         });
     }
 
     return Ok(());
 }
+
 enum Language {
     English,
     Japanese,
 }
 #[derive(Debug, Serialize, Deserialize)]
 struct VscodeSetting {
+    #[serde(rename = "latex-workshop.latex.autoBuild.run")]
+    latex_workshop_latex_auto_build_run: String,
+
     #[serde(rename = "latex-workshop.latex.recipe.default")]
     latex_workshop_latex_recipe_default: String,
 
@@ -59,7 +74,7 @@ struct VscodeSetting {
     latex_workshop_latex_tools: Vec<LatexTool>,
 
     #[serde(rename = "latex-workshop.latex.outDir")]
-    latex_workshop_latex_outdir: String,
+    latex_workshop_latex_out_dir: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -69,18 +84,18 @@ struct LatexTool {
     args: Vec<String>,
     env: HashMap<String, String>,
 }
-fn prepare_settings_json(project_path: &Path, language: &Language) -> Result<(), std::io::Error> {
-    let setting = get_settings_json(project_path, language);
+fn prepare_settings_json(project: &Project) -> Result<(), std::io::Error> {
+    let setting = get_settings_json(project);
 
     //serialized
     let file_content: String = serde_json::to_string(&setting).unwrap();
     //write
-    let mut file = fs::File::create(project_path.join(".vscode/settings.json"))?;
+    let mut file = fs::File::create(project.path.join(".vscode/settings.json"))?;
     file.write_all(file_content.as_bytes())?;
-    Ok(())
+    return Ok(());
 }
-fn get_settings_json(project_path: &Path, language: &Language) -> VscodeSetting {
-    let original_file_content = match language {
+fn get_settings_json(project: &Project) -> VscodeSetting {
+    let original_file_content = match project.language {
         Language::English => panic!("English configuration is not implemented."),
         Language::Japanese => JA_SETTINGS_JSON,
     };
@@ -88,7 +103,8 @@ fn get_settings_json(project_path: &Path, language: &Language) -> VscodeSetting 
     let mut setting: VscodeSetting = serde_json::from_str(original_file_content).unwrap();
 
     //出力ディレクトリを設定
-    setting.latex_workshop_latex_outdir = project_path
+    setting.latex_workshop_latex_out_dir = project
+        .path
         .join("out")
         .into_os_string()
         .into_string()
@@ -100,7 +116,8 @@ fn get_settings_json(project_path: &Path, language: &Language) -> VscodeSetting 
     for i in 0..(args.len() - 1) {
         if args[i] == "-r" {
             r_option_found = true;
-            args[i + 1] = project_path
+            args[i + 1] = project
+                .path
                 .join(".latexmkrc")
                 .into_os_string()
                 .into_string()
@@ -109,9 +126,9 @@ fn get_settings_json(project_path: &Path, language: &Language) -> VscodeSetting 
         }
     }
     if !r_option_found {
-        let file_name = match (language) {
+        let file_name = match (project.language) {
             Language::English => panic!("English configuration is not implemented."),
-            Language::Japanese => "templates/ja/ja-project/.vscode/settings.json",
+            Language::Japanese => "templates/ja/.vscode/settings.json",
         };
         panic!("\"-r\" option not found in {file_name}.")
     }
@@ -119,15 +136,40 @@ fn get_settings_json(project_path: &Path, language: &Language) -> VscodeSetting 
     return setting;
 }
 
-fn prepare_latexmkrc(project_path: &Path, language: &Language) -> Result<(), std::io::Error> {
-    let file_content = match language {
+fn prepare_latexmkrc(project: &Project) -> Result<(), std::io::Error> {
+    let file_content = match project.language {
         Language::English => panic!("English configuration is not implemented."),
         Language::Japanese => JA_LATEXMKRC,
     };
 
-    let destination_file_path = project_path.join(".latexmkrc");
+    let destination_file_path = project.path.join(".latexmkrc");
 
     let mut file = fs::File::create(destination_file_path)?;
     file.write_all(file_content.as_bytes());
-    Ok(())
+    return Ok(());
+}
+
+fn prepare_tex_file(project: &Project) -> Result<(), std::io::Error> {
+    let file_content = match project.language {
+        Language::English => panic!("English configuration is not implemented."),
+        Language::Japanese => JA_NOTE,
+    };
+
+    let destination_file_path = project.path.join("src/note.tex");
+
+    let mut file = fs::File::create(destination_file_path)?;
+    file.write_all(file_content.as_bytes());
+    return Ok(());
+}
+fn prepare_bib_file(project: &Project) -> Result<(), std::io::Error> {
+    let file_content = match project.language {
+        Language::English => panic!("English configuration is not implemented."),
+        Language::Japanese => JA_NOTE,
+    };
+
+    let destination_file_path = project.path.join("src/note.tex");
+
+    let mut file = fs::File::create(destination_file_path)?;
+    file.write_all(file_content.as_bytes());
+    return Ok(());
 }
