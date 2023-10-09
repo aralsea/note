@@ -1,5 +1,7 @@
 \pdfoutput=1
 \documentclass{amsart}
+\usepackage[backend=biber, style=alphabetic, sorting=nyt]{biblatex}
+\addbibresource{path to .bib file} 
 
 %% packages
 \usepackage{mathtools}
@@ -76,9 +78,16 @@
 \usepackage[urlcolor=blue]{hyperref}
 
 \title{The title}
-\author[J.~Doe]{John Doe}
-\address{New York City}
-\email{john@gmail.com}
+\author[H.~Arai]{Hayato Arai}
+\address{
+Graduate School of Mathematical Sciences,
+The University of Tokyo,
+3-8-1 Komaba,
+Meguro-ku,
+Tokyo,
+153-8914,
+Japan.}
+\email{hayato@xxx.com}
 \date{\today}
 \begin{document}
 
@@ -87,8 +96,6 @@
 \end{abstract}
 \maketitle
 \section{Introduction}
-test
-% \bibliographystyle{amsalpha}
-% \bibliography{../bib/note}
-
+The most well-known textbook on algebraic geometry is \cite{MR0463157}.
+\printbibliography
 \end{document}

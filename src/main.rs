@@ -213,12 +213,12 @@ fn prepare_tex_file(project: &Project) -> std::io::Result<()> {
         )
         .to_string();
 
-    // bibliographyを書き換える
-    let re = Regex::new(r"\\bibliography\{[^}]*\}").unwrap(); // \bibliography{.*}にマッチするregex
+    // addbibresourceを書き換える
+    let re = Regex::new(r"\\addbibresource\{[^}]*\}").unwrap(); // \addbibresource{.*}にマッチするregex
     file_content = re
         .replace_all(
             &file_content,
-            &format!(r"\bibliography{{../bib/{}}}", project.name),
+            &format!(r"\addbibresource{{../bib/{}.bib}}", project.name),
         )
         .to_string();
 

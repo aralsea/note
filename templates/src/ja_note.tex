@@ -1,4 +1,7 @@
 \documentclass[uplatex,a4paper,dvipdfmx]{jsarticle}
+\usepackage[backend=biber, style=alphabetic, sorting=nyt]{biblatex}
+\addbibresource{path to .bib file} 
+
 \usepackage{amsthm}
 \usepackage{amsmath,amsfonts,amssymb}
 \usepackage{tikz-cd}
@@ -64,9 +67,7 @@
 \begin{document}
 \maketitle
 \section{導入}
+代数幾何学の最もよく知られた教科書は\cite{MR0463157}である。
 
-
-% \bibliographystyle{jplain}
-% \bibliography{../bib/note}
-
+\printbibliography[title=参考文献] 
 \end{document}
