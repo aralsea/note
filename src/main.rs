@@ -23,6 +23,7 @@ const EN_NOTE: &str = include_str!("../templates/src/en_note.tex");
 const BIB: &str = include_str!("../templates/bib/note.bib");
 const GITIGNORE: &str = include_str!("../templates/.gitignore");
 
+const SUB_DIRECTORIES: [&str; 4] = [".vscode", "src", "out", "bib"];
 #[derive(Debug, Parser)]
 struct Cli {
     #[command(subcommand)]
@@ -108,7 +109,7 @@ fn prepare_directories(project: &Project) {
         ),
     };
 
-    for sub_directory in [".vscode", "src", "out", "bib"] {
+    for sub_directory in SUB_DIRECTORIES {
         fs::create_dir(project.path.join(sub_directory)).unwrap();
     }
 }
