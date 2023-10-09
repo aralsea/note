@@ -120,6 +120,12 @@ enum Language {
 }
 #[derive(Debug, Serialize, Deserialize)]
 struct VscodeSetting {
+    #[serde(rename = "editor.formatOnSave")]
+    editor_format_on_save: bool,
+    #[serde(rename = "editor.defaultFormatter")]
+    editor_default_formatter: String,
+    #[serde(rename = "latex-workshop.latex.autoBuild.run")]
+    latex_workshop_latexindent_path: String,
     #[serde(rename = "latex-workshop.latex.autoBuild.run")]
     latex_workshop_latex_auto_build_run: String,
 
