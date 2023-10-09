@@ -6,7 +6,7 @@ vscode拡張機能のlatex-workshopが快適に動くような環境を自動設
 - MacOS
 - rust
   https://www.rust-lang.org/tools/install
-- vscode
+- vscode + latex-workshop
   ``` bash
   brew install --cask visual-studio-code
   ```
