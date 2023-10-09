@@ -1,4 +1,5 @@
 #![allow(unused)]
+use clap::{Args, Parser, Subcommand};
 use once_cell::sync::OnceCell;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -18,20 +19,45 @@ const JA_LATEXMKRC: &str = include_str!("../templates/ja/.latexmkrc");
 const JA_NOTE: &str = include_str!("../templates/ja/src/note.tex");
 const JA_BIB: &str = include_str!("../templates/ja/bib/note.bib");
 const JA_GITIGNORE: &str = include_str!("../templates/ja/.gitignore");
+
+#[derive(Debug, Parser)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
+
+#[derive(Debug, Subcommand)]
+enum Commands {
+    #[command(about = "Create a new latex project in the current directory")]
+    New(NewArgs),
+    #[command(about = "View and edit the current configurations")]
+    Config(ConfigArgs),
+}
+#[derive(Debug, Args)]
+struct NewArgs {
+    #[arg(help = "The name of the new project")]
+    project_name: String,
+}
+
+#[derive(Debug, Args)]
+struct ConfigArgs {
+    #[arg(long, help = "Set the default author name for newly created documents")]
+    author_name: Option<String>,
+}
+
 fn main() {
     Config::load_config();
-    let args: Vec<String> = env::args().collect();
-    if args.len() > 2 && args[1] == "new" {
-        let project_name = &args[2];
-        create_project(project_name, Language::Japanese);
-    } else if args.len() == 3 && args[1] == "config" && args[2] == "show" {
-        show_config();
-    } else if args.len() == 5 && args[1] == "config" && args[2] == "set" && args[3] == "author-name"
-    {
-        set_author_name(&args[4]);
-    } else {
-        eprintln!("unknown command.");
+    let cli = Cli::parse();
+    match cli.command {
+        Commands::New(args) => create_project(&args.project_name, Language::Japanese),
+        Commands::Config(args) => {
+            if let Some(author_name) = &args.author_name {
+                set_author_name(author_name);
+            }
+            show_config();
+        }
     }
+    return;
 }
 
 struct Project {
