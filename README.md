@@ -32,7 +32,7 @@ cargo install --git https://github.com/aralsea/note
   - `note new --language english PROJECT_NAME`: 英語用の設定を使用
   - 使用されるテンプレートは `~/.note/templates/src`を編集することで変更できる 
 - `note config`: 現在の設定を確認
-- `note config --author-name YOUR_NAME`: 著者名のデフォルト値を設定する
+- `note config --author YOUR_NAME`: 著者名のデフォルト値を設定する
 - `note config --lang english`: 言語のデフォルトを英語に設定する
 - その他の詳細は `note --help`を参照
   
