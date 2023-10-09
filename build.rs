@@ -9,15 +9,15 @@ fn main() {
     let home_dir = Path::new(&home_dir_str);
 
     // ~/.note_configを作成
-    let config_dir = home_dir.join(".note_config");
+    let config_dir = home_dir.join(".note");
     match fs::create_dir(&config_dir) {
         Ok(_) => {}
         Err(ref error) if error.kind() == ErrorKind::AlreadyExists => {}
         Err(error) => panic!("{error}"),
     };
 
-    // templatesを.note_config/にコピー
+    // templatesを.note_configの配下にコピー
     let mut options = dir::CopyOptions::new();
-    options = options.skip_exist(true);
+    options = options.overwrite(true);
     dir::copy("templates", config_dir, &options).unwrap();
 }

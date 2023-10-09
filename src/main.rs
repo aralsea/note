@@ -2,6 +2,7 @@
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use once_cell::sync::OnceCell;
 use regex::Regex;
+use serde::de;
 use serde::{Deserialize, Serialize};
 use std::alloc::GlobalAlloc;
 use std::collections::HashMap;
@@ -14,14 +15,16 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process;
 
-const SETTINGS_JSON: &str = include_str!("../templates/.vscode/settings.json");
-const JA_LATEXMKRC: &str = include_str!("../templates/.ja_latexmkrc");
-const EN_LATEXMKRC: &str = include_str!("../templates/.en_latexmkrc");
-const JA_NOTE: &str = include_str!("../templates/src/ja_note.tex");
+const NOTE_PATH: &str = ".note";
+const CONFIG_JSON_PATH: &str = ".note/config.json";
+const SETTINGS_JSON_PATH: &str = ".note/templates/.vscode/settings.json";
+const JA_LATEXMKRC_PATH: &str = ".note/templates/.ja_latexmkrc";
+const EN_LATEXMKRC_PATH: &str = ".note/templates/.en_latexmkrc";
+const JA_TEMPLATE_PATH: &str = ".note/templates/src/ja_template.tex";
 
-const EN_NOTE: &str = include_str!("../templates/src/en_note.tex");
-const BIB: &str = include_str!("../templates/bib/note.bib");
-const GITIGNORE: &str = include_str!("../templates/.gitignore");
+const EN_TEMPLATE_PATH: &str = ".note/templates/src/en_template.tex";
+const BIB_PATH: &str = ".note/templates/bib/template.bib";
+const GITIGNORE_PATH: &str = ".note/templates/.gitignore";
 
 const SUB_DIRECTORIES: [&str; 4] = [".vscode", "src", "out", "bib"];
 #[derive(Debug, Parser)]
@@ -123,10 +126,13 @@ enum Language {
 struct VscodeSetting {
     #[serde(rename = "editor.formatOnSave")]
     editor_format_on_save: bool,
+
     #[serde(rename = "editor.defaultFormatter")]
     editor_default_formatter: String,
-    #[serde(rename = "latex-workshop.latex.autoBuild.run")]
+
+    #[serde(rename = "latex-workshop.latexindent.path")]
     latex_workshop_latexindent_path: String,
+
     #[serde(rename = "latex-workshop.latex.autoBuild.run")]
     latex_workshop_latex_auto_build_run: String,
 
@@ -158,7 +164,11 @@ fn prepare_settings_json(project: &Project) -> std::io::Result<()> {
     return Ok(());
 }
 fn get_settings_json(project: &Project) -> VscodeSetting {
-    let mut setting: VscodeSetting = serde_json::from_str(SETTINGS_JSON).unwrap();
+    let home_dir_str = env::var("HOME").unwrap();
+    let home_dir = Path::new(&home_dir_str);
+    let file = fs::File::open(home_dir.join(SETTINGS_JSON_PATH)).unwrap();
+    let reader = BufReader::new(file);
+    let mut setting: VscodeSetting = serde_json::from_reader(reader).unwrap();
 
     //出力ディレクトリを設定
     setting.latex_workshop_latex_out_dir = project
@@ -192,10 +202,14 @@ fn get_settings_json(project: &Project) -> VscodeSetting {
 }
 
 fn prepare_latexmkrc(project: &Project) -> std::io::Result<()> {
-    let file_content = match project.language {
-        Language::English => EN_LATEXMKRC,
-        Language::Japanese => JA_LATEXMKRC,
-    };
+    let home_dir_str = env::var("HOME").unwrap();
+    let home_dir = Path::new(&home_dir_str);
+
+    let file_content = fs::read_to_string(home_dir.join(match project.language {
+        Language::English => EN_LATEXMKRC_PATH,
+        Language::Japanese => JA_LATEXMKRC_PATH,
+    }))
+    .unwrap();
 
     let destination_file_path = project.path.join(".latexmkrc");
 
@@ -205,11 +219,13 @@ fn prepare_latexmkrc(project: &Project) -> std::io::Result<()> {
 }
 
 fn prepare_tex_file(project: &Project) -> std::io::Result<()> {
-    let mut file_content = match project.language {
-        Language::English => EN_NOTE,
-        Language::Japanese => JA_NOTE,
-    }
-    .to_string();
+    let home_dir_str = env::var("HOME").unwrap();
+    let home_dir = Path::new(&home_dir_str);
+    let mut file_content = fs::read_to_string(home_dir.join(match project.language {
+        Language::English => EN_TEMPLATE_PATH,
+        Language::Japanese => JA_TEMPLATE_PATH,
+    }))
+    .unwrap();
 
     // authorを書き換える
     let re = Regex::new(r"\\author\{[^}]*\}").unwrap(); // \author{.*}にマッチするregex
@@ -229,23 +245,31 @@ fn prepare_tex_file(project: &Project) -> std::io::Result<()> {
         )
         .to_string();
 
-    let destination_file_path = project.path.join("src/note.tex");
+    let destination_file_path = project.path.join(format!("src/{}.tex", project.name));
     let mut file = fs::File::create(destination_file_path)?;
     file.write_all(file_content.as_bytes());
     return Ok(());
 }
 fn prepare_bib_file(project: &Project) -> std::io::Result<()> {
+    let home_dir_str = env::var("HOME").unwrap();
+    let home_dir = Path::new(&home_dir_str);
+    let file_content = fs::read_to_string(home_dir.join(BIB_PATH)).unwrap();
+
     let destination_file_path = project.path.join(format!("bib/{}.bib", project.name));
 
     let mut file = fs::File::create(destination_file_path)?;
-    file.write_all(BIB.as_bytes());
+    file.write_all(file_content.as_bytes());
     return Ok(());
 }
 fn prepare_gitignore(project: &Project) -> std::io::Result<()> {
+    let home_dir_str = env::var("HOME").unwrap();
+    let home_dir = Path::new(&home_dir_str);
+    let file_content = fs::read_to_string(home_dir.join(GITIGNORE_PATH)).unwrap();
+
     let destination_file_path = project.path.join(".gitignore");
 
     let mut file = fs::File::create(destination_file_path)?;
-    file.write_all(GITIGNORE.as_bytes());
+    file.write_all(file_content.as_bytes());
     return Ok(());
 }
 
@@ -268,8 +292,8 @@ impl Config {
     }
     fn path() -> PathBuf {
         let home_dir = env::var("HOME").unwrap();
-        let config_dir = format!("{home_dir}/.note_config/config.json");
-        return PathBuf::from(&config_dir);
+        let config_dir = PathBuf::from(&home_dir).join(CONFIG_JSON_PATH);
+        return config_dir;
     }
     fn create_config_file() {
         // CONFIG_PATHを新規作成する
@@ -282,10 +306,12 @@ impl Config {
     fn save_to_file(&self) {
         let file_content: String = serde_json::to_string_pretty(self).unwrap();
         let destination_file_path = Config::path();
+
         let mut file =
             fs::File::create(destination_file_path).expect("Failed to save the config file.");
         file.write_all(file_content.as_bytes());
     }
+
     fn load_config() {
         let config_file = match fs::File::open(Config::path()) {
             Ok(config_file) => config_file,
