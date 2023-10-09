@@ -80,7 +80,6 @@ fn main() {
             show_config();
         }
     }
-    return;
 }
 
 struct Project {
@@ -377,7 +376,7 @@ fn set_author_name(author_name: &str) {
 }
 fn set_language(language: Language) {
     let new_config = Config {
-        language: language,
+        language,
         ..Config::global().clone()
     };
     new_config.save_to_file();
