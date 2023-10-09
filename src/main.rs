@@ -1,12 +1,7 @@
-#![allow(unused)]
 use clap::{Args, Parser, Subcommand, ValueEnum};
-use fs_extra::file;
 use once_cell::sync::OnceCell;
 use regex::Regex;
-use serde::de;
 use serde::{Deserialize, Serialize};
-
-use std::alloc::GlobalAlloc;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
@@ -16,7 +11,6 @@ use std::io::ErrorKind;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process;
-const NOTE_PATH: &str = ".note";
 const CONFIG_JSON_PATH: &str = ".note/config.json";
 const SETTINGS_JSON_PATH: &str = ".note/templates/.vscode/settings.json";
 const JA_LATEXMKRC_PATH: &str = ".note/templates/.ja_latexmkrc";
@@ -46,15 +40,29 @@ enum Commands {
 struct NewArgs {
     #[arg(help = "The name of the new LaTeX project")]
     project_name: String,
-    #[arg(short, long, help = "The language setting for the new project")]
+    #[arg(
+        short,
+        long = "lang",
+        help = "The language setting for the new project"
+    )]
     #[clap(value_enum, default_value_t=Language::Japanese)]
     language: Language,
 }
 
 #[derive(Debug, Args)]
 struct ConfigArgs {
-    #[arg(long, help = "Set the default author name for newly created documents")]
+    #[arg(
+        long = "author",
+        help = "Set the default author name for newly created documents"
+    )]
     author_name: Option<String>,
+    #[arg(
+        short,
+        long = "lang",
+        value_enum,
+        help = "Set the default language for newly created projects"
+    )]
+    language: Option<Language>,
 }
 
 fn main() {
@@ -65,6 +73,9 @@ fn main() {
         Commands::Config(args) => {
             if let Some(author_name) = &args.author_name {
                 set_author_name(author_name);
+            }
+            if let Some(language) = args.language {
+                set_language(language);
             }
             show_config();
         }
@@ -120,10 +131,15 @@ fn prepare_directories(project: &Project) {
     }
 }
 
-#[derive(Debug, Copy, Clone, ValueEnum)]
+#[derive(Debug, Copy, Clone, ValueEnum, Serialize, Deserialize)]
 enum Language {
     English,
     Japanese,
+}
+impl Default for Language {
+    fn default() -> Self {
+        Self::Japanese
+    }
 }
 #[derive(Debug, Serialize, Deserialize)]
 struct VscodeSetting {
@@ -298,6 +314,9 @@ fn prepare_readme(project: &Project) -> std::io::Result<()> {
 struct Config {
     #[serde(default)]
     author_name: String,
+
+    #[serde(default)]
+    language: Language,
 }
 static CONFIG: OnceCell<Config> = OnceCell::new();
 
@@ -309,6 +328,7 @@ impl Config {
     fn default() -> Config {
         return Config {
             author_name: String::default(),
+            language: Language::Japanese,
         };
     }
     fn path() -> PathBuf {
@@ -357,6 +377,13 @@ fn show_config() {
 fn set_author_name(author_name: &str) {
     let new_config = Config {
         author_name: author_name.to_string(),
+        ..Config::global().clone()
+    };
+    new_config.save_to_file();
+}
+fn set_language(language: Language) {
+    let new_config = Config {
+        language: language,
         ..Config::global().clone()
     };
     new_config.save_to_file();
