@@ -9,6 +9,7 @@ vscode拡張機能のlatex-workshopが快適に動くような環境を自動設
 - vscode + latex-workshop
   ``` bash
   brew install --cask visual-studio-code
+  code --install-extension James-Yu.latex-workshop
   ```
 - Texlive
   ``` bash
