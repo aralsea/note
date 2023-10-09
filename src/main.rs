@@ -203,7 +203,7 @@ fn get_settings_json(project: &Project) -> VscodeSetting {
         panic!("\"-r\" option not found in {file_name}.")
     }
 
-    return setting;
+    setting
 }
 
 fn prepare_latexmkrc(project: &Project) {
@@ -319,15 +319,15 @@ impl Config {
     }
 
     fn default() -> Config {
-        return Config {
+        Config {
             author_name: String::default(),
             language: Language::Japanese,
-        };
+        }
     }
     fn path() -> PathBuf {
         let home_dir = env::var("HOME").unwrap();
-        let config_dir = PathBuf::from(&home_dir).join(CONFIG_JSON_PATH);
-        return config_dir;
+
+        PathBuf::from(&home_dir).join(CONFIG_JSON_PATH)
     }
     fn create_config_file() {
         // CONFIG_PATHを新規作成する
@@ -360,7 +360,6 @@ impl Config {
         let reader = BufReader::new(config_file);
         let config: Config = serde_json::from_reader(reader).unwrap();
         CONFIG.set(config).unwrap();
-        return;
     }
 }
 
