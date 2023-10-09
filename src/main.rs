@@ -120,7 +120,7 @@ fn prepare_directories(project: &Project) {
             println!("The directory `{}` already exists.", &project.name);
             process::exit(0);
         }
-        Err(error) => panic!(
+        Err(_) => panic!(
             "There was a problem creating the directory {}",
             &project.path.display()
         ),
@@ -160,15 +160,14 @@ struct LatexTool {
     args: Vec<String>,
     env: HashMap<String, String>,
 }
-fn prepare_settings_json(project: &Project) -> std::io::Result<()> {
+fn prepare_settings_json(project: &Project) {
     let setting = get_settings_json(project);
 
     //serialized
     let file_content: String = serde_json::to_string_pretty(&setting).unwrap();
     //write
-    let mut file = fs::File::create(project.path.join(".vscode/settings.json"))?;
-    file.write_all(file_content.as_bytes())?;
-    return Ok(());
+    let mut file = fs::File::create(project.path.join(".vscode/settings.json")).unwrap();
+    file.write_all(file_content.as_bytes()).unwrap();
 }
 fn get_settings_json(project: &Project) -> VscodeSetting {
     let home_dir_str = env::var("HOME").unwrap();
@@ -186,7 +185,7 @@ fn get_settings_json(project: &Project) -> VscodeSetting {
         .unwrap();
 
     //参照する.latexmkrcの場所を設定
-    let mut args = &mut setting.latex_workshop_latex_tools[0].args;
+    let args = &mut setting.latex_workshop_latex_tools[0].args;
     let mut r_option_found = false;
     for i in 0..(args.len() - 1) {
         if args[i] == "-r" {
@@ -208,7 +207,7 @@ fn get_settings_json(project: &Project) -> VscodeSetting {
     return setting;
 }
 
-fn prepare_latexmkrc(project: &Project) -> std::io::Result<()> {
+fn prepare_latexmkrc(project: &Project) {
     let home_dir_str = env::var("HOME").unwrap();
     let home_dir = Path::new(&home_dir_str);
 
@@ -220,12 +219,11 @@ fn prepare_latexmkrc(project: &Project) -> std::io::Result<()> {
 
     let destination_file_path = project.path.join(".latexmkrc");
 
-    let mut file = fs::File::create(destination_file_path)?;
-    file.write_all(file_content.as_bytes());
-    return Ok(());
+    let mut file = fs::File::create(destination_file_path).unwrap();
+    file.write_all(file_content.as_bytes()).unwrap();
 }
 
-fn prepare_tex_file(project: &Project) -> std::io::Result<()> {
+fn prepare_tex_file(project: &Project) {
     let home_dir_str = env::var("HOME").unwrap();
     let home_dir = Path::new(&home_dir_str);
     let mut file_content = fs::read_to_string(home_dir.join(match project.language {
@@ -253,31 +251,28 @@ fn prepare_tex_file(project: &Project) -> std::io::Result<()> {
         .to_string();
 
     let destination_file_path = project.path.join(format!("src/{}.tex", project.name));
-    let mut file = fs::File::create(destination_file_path)?;
-    file.write_all(file_content.as_bytes());
-    return Ok(());
+    let mut file = fs::File::create(destination_file_path).unwrap();
+    file.write_all(file_content.as_bytes()).unwrap();
 }
-fn prepare_bib_file(project: &Project) -> std::io::Result<()> {
+fn prepare_bib_file(project: &Project) {
     let home_dir_str = env::var("HOME").unwrap();
     let home_dir = Path::new(&home_dir_str);
     let file_content = fs::read_to_string(home_dir.join(BIB_PATH)).unwrap();
 
     let destination_file_path = project.path.join(format!("bib/{}.bib", project.name));
 
-    let mut file = fs::File::create(destination_file_path)?;
-    file.write_all(file_content.as_bytes());
-    return Ok(());
+    let mut file = fs::File::create(destination_file_path).unwrap();
+    file.write_all(file_content.as_bytes()).unwrap();
 }
-fn prepare_gitignore(project: &Project) -> std::io::Result<()> {
+fn prepare_gitignore(project: &Project) {
     let home_dir_str = env::var("HOME").unwrap();
     let home_dir = Path::new(&home_dir_str);
     let file_content = fs::read_to_string(home_dir.join(GITIGNORE_PATH)).unwrap();
 
     let destination_file_path = project.path.join(".gitignore");
 
-    let mut file = fs::File::create(destination_file_path)?;
-    file.write_all(file_content.as_bytes());
-    return Ok(());
+    let mut file = fs::File::create(destination_file_path).unwrap();
+    file.write_all(file_content.as_bytes()).unwrap();
 }
 
 fn uppercase_first(data: &str) -> String {
@@ -295,7 +290,7 @@ fn uppercase_first(data: &str) -> String {
     result
 }
 
-fn prepare_readme(project: &Project) -> std::io::Result<()> {
+fn prepare_readme(project: &Project) {
     let home_dir_str = env::var("HOME").unwrap();
     let home_dir = Path::new(&home_dir_str);
     let mut file_content = fs::read_to_string(home_dir.join(README_PATH)).unwrap();
@@ -305,9 +300,8 @@ fn prepare_readme(project: &Project) -> std::io::Result<()> {
     file_content = file_content.replace("SOURCE_FILE", &project.name);
 
     let destination_file_path = project.path.join("README.md");
-    let mut file = fs::File::create(destination_file_path)?;
-    file.write_all(file_content.as_bytes());
-    return Ok(());
+    let mut file = fs::File::create(destination_file_path).unwrap();
+    file.write_all(file_content.as_bytes()).unwrap();
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -350,7 +344,7 @@ impl Config {
 
         let mut file =
             fs::File::create(destination_file_path).expect("Failed to save the config file.");
-        file.write_all(file_content.as_bytes());
+        file.write_all(file_content.as_bytes()).unwrap();
     }
 
     fn load_config() {
@@ -366,7 +360,7 @@ impl Config {
         };
         let reader = BufReader::new(config_file);
         let config: Config = serde_json::from_reader(reader).unwrap();
-        CONFIG.set(config);
+        CONFIG.set(config).unwrap();
         return;
     }
 }
