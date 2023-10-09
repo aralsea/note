@@ -1,5 +1,5 @@
 #![allow(unused)]
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use once_cell::sync::OnceCell;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -14,11 +14,14 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process;
 
-const JA_SETTINGS_JSON: &str = include_str!("../templates/ja/.vscode/settings.json");
-const JA_LATEXMKRC: &str = include_str!("../templates/ja/.latexmkrc");
-const JA_NOTE: &str = include_str!("../templates/ja/src/note.tex");
-const JA_BIB: &str = include_str!("../templates/ja/bib/note.bib");
-const JA_GITIGNORE: &str = include_str!("../templates/ja/.gitignore");
+const SETTINGS_JSON: &str = include_str!("../templates/.vscode/settings.json");
+const JA_LATEXMKRC: &str = include_str!("../templates/.ja_latexmkrc");
+const EN_LATEXMKRC: &str = include_str!("../templates/.en_latexmkrc");
+const JA_NOTE: &str = include_str!("../templates/src/ja_note.tex");
+
+const EN_NOTE: &str = include_str!("../templates/src/en_note.tex");
+const BIB: &str = include_str!("../templates/bib/note.bib");
+const GITIGNORE: &str = include_str!("../templates/.gitignore");
 
 #[derive(Debug, Parser)]
 struct Cli {
@@ -35,8 +38,11 @@ enum Commands {
 }
 #[derive(Debug, Args)]
 struct NewArgs {
-    #[arg(help = "The name of the new project")]
+    #[arg(help = "The name of the new LaTeX project")]
     project_name: String,
+    #[arg(short, long, help = "The language setting for the new project")]
+    #[clap(value_enum, default_value_t=Language::Japanese)]
+    language: Language,
 }
 
 #[derive(Debug, Args)]
@@ -49,7 +55,7 @@ fn main() {
     Config::load_config();
     let cli = Cli::parse();
     match cli.command {
-        Commands::New(args) => create_project(&args.project_name, Language::Japanese),
+        Commands::New(args) => create_project(&args),
         Commands::Config(args) => {
             if let Some(author_name) = &args.author_name {
                 set_author_name(author_name);
@@ -65,12 +71,12 @@ struct Project {
     path: PathBuf,
     language: Language,
 }
-fn create_project(project_name: &str, language: Language) {
+fn create_project(args: &NewArgs) {
     let current_path = env::current_dir().unwrap();
     let project = Project {
-        name: project_name.to_string(),
-        path: current_path.join(project_name),
-        language: language,
+        name: args.project_name.clone(),
+        path: current_path.join(&args.project_name),
+        language: args.language,
     };
     prepare_directories(&project);
 
@@ -93,7 +99,7 @@ fn prepare_directories(project: &Project) {
     match fs::create_dir(&project.path) {
         Ok(_) => {}
         Err(ref error) if error.kind() == ErrorKind::AlreadyExists => {
-            println!("The directory {} already exists.", &project.name);
+            println!("The directory `{}` already exists.", &project.name);
             process::exit(0);
         }
         Err(error) => panic!(
@@ -107,6 +113,7 @@ fn prepare_directories(project: &Project) {
     }
 }
 
+#[derive(Debug, Copy, Clone, ValueEnum)]
 enum Language {
     English,
     Japanese,
@@ -144,12 +151,7 @@ fn prepare_settings_json(project: &Project) -> std::io::Result<()> {
     return Ok(());
 }
 fn get_settings_json(project: &Project) -> VscodeSetting {
-    let original_file_content = match project.language {
-        Language::English => panic!("English configuration is not implemented."),
-        Language::Japanese => JA_SETTINGS_JSON,
-    };
-
-    let mut setting: VscodeSetting = serde_json::from_str(original_file_content).unwrap();
+    let mut setting: VscodeSetting = serde_json::from_str(SETTINGS_JSON).unwrap();
 
     //出力ディレクトリを設定
     setting.latex_workshop_latex_out_dir = project
@@ -159,7 +161,7 @@ fn get_settings_json(project: &Project) -> VscodeSetting {
         .into_string()
         .unwrap();
 
-    //.latexmkrcの場所を設定
+    //参照する.latexmkrcの場所を設定
     let mut args = &mut setting.latex_workshop_latex_tools[0].args;
     let mut r_option_found = false;
     for i in 0..(args.len() - 1) {
@@ -175,10 +177,7 @@ fn get_settings_json(project: &Project) -> VscodeSetting {
         }
     }
     if !r_option_found {
-        let file_name = match (project.language) {
-            Language::English => panic!("English configuration is not implemented."),
-            Language::Japanese => "templates/ja/.vscode/settings.json",
-        };
+        let file_name = "templates/.vscode/settings.json";
         panic!("\"-r\" option not found in {file_name}.")
     }
 
@@ -187,7 +186,7 @@ fn get_settings_json(project: &Project) -> VscodeSetting {
 
 fn prepare_latexmkrc(project: &Project) -> std::io::Result<()> {
     let file_content = match project.language {
-        Language::English => panic!("English configuration is not implemented."),
+        Language::English => EN_LATEXMKRC,
         Language::Japanese => JA_LATEXMKRC,
     };
 
@@ -200,9 +199,10 @@ fn prepare_latexmkrc(project: &Project) -> std::io::Result<()> {
 
 fn prepare_tex_file(project: &Project) -> std::io::Result<()> {
     let mut file_content = match project.language {
-        Language::English => panic!("English configuration is not implemented."),
-        Language::Japanese => JA_NOTE.to_string(),
-    };
+        Language::English => EN_NOTE,
+        Language::Japanese => JA_NOTE,
+    }
+    .to_string();
 
     // authorを書き換える
     let re = Regex::new(r"\\author\{[^}]*\}").unwrap(); // \author{.*}にマッチするregex
@@ -228,27 +228,17 @@ fn prepare_tex_file(project: &Project) -> std::io::Result<()> {
     return Ok(());
 }
 fn prepare_bib_file(project: &Project) -> std::io::Result<()> {
-    let file_content = match project.language {
-        Language::English => panic!("English configuration is not implemented."),
-        Language::Japanese => JA_BIB,
-    };
-
     let destination_file_path = project.path.join(format!("bib/{}.bib", project.name));
 
     let mut file = fs::File::create(destination_file_path)?;
-    file.write_all(file_content.as_bytes());
+    file.write_all(BIB.as_bytes());
     return Ok(());
 }
 fn prepare_gitignore(project: &Project) -> std::io::Result<()> {
-    let file_content = match project.language {
-        Language::English => panic!("English configuration is not implemented."),
-        Language::Japanese => JA_GITIGNORE,
-    };
-
     let destination_file_path = project.path.join(".gitignore");
 
     let mut file = fs::File::create(destination_file_path)?;
-    file.write_all(file_content.as_bytes());
+    file.write_all(GITIGNORE.as_bytes());
     return Ok(());
 }
 

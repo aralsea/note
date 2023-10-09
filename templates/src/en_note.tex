@@ -1,0 +1,94 @@
+\pdfoutput=1
+\documentclass{amsart}
+
+%% packages
+\usepackage{mathtools}
+\usepackage{tikz-cd}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{here}
+
+\numberwithin{equation}{section}
+\mathtoolsset{showonlyrefs=true}
+\renewcommand{\theenumi}{\arabic{enumi}}
+
+%% Theorems
+\theoremstyle{plain}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{remark}[theorem]{Remark}
+
+%% Some operators
+\DeclareMathOperator{\Hom}{\mathrm{Hom}}
+\DeclareMathOperator{\Tor}{\mathrm{Tor}}
+\DeclareMathOperator{\CHom}{\mathcal{H}\!\mathit{om}}
+\DeclareMathOperator{\CTor}{\mathcal{T}\!\mathit{or}}
+\DeclareMathOperator{\Auteq}{\mathrm{Auteq}}
+\DeclareMathOperator{\Cone}{\mathrm{Cone}}
+\DeclareMathOperator{\ev}{\mathrm{ev}}
+\DeclareMathOperator{\id}{\mathrm{id}}
+\DeclareMathOperator{\depth}{\mathrm{depth}}
+\DeclareMathOperator{\Pic}{\mathrm{Pic}}
+\DeclareMathOperator{\MCG}{\mathrm{MCG}}
+\DeclareMathOperator{\PMCG}{\mathrm{PMCG}}
+\DeclareMathOperator{\RHom}{\mathrm{RHom}}
+\DeclareMathOperator{\Ker}{\mathrm{Ker}}
+\DeclareMathOperator{\Image}{\mathrm{Im}}
+\DeclareMathOperator{\Aut}{\mathrm{Aut}}
+\DeclareMathOperator{\Inn}{\mathrm{Inn}}
+\DeclareMathOperator{\Out}{\mathrm{Out}}
+\DeclareMathOperator{\Supp}{\mathrm{Supp}}
+\DeclareMathOperator{\SL}{\mathrm{SL}}
+\DeclareMathOperator{\Spec}{\mathrm{Spec}}
+\DeclareMathOperator{\Perf}{\mathrm{Perf}}
+\DeclareMathOperator{\NS}{\mathrm{NS}}
+\DeclareMathOperator{\Ext}{\mathrm{Ext}}
+\DeclareMathOperator{\Hilb}{\mathrm{Hilb}}
+
+\newcommand{\nc}{\newcommand}
+
+%% Calligraphic letters
+
+\nc{\cF}{{\mathcal{F}}}
+\nc{\cG}{{\mathcal{G}}}
+\nc{\cH}{{\mathcal{H}}}
+
+\nc{\cO}{{\mathcal{O}}}
+\nc{\cU}{{\mathcal{U}}}
+\nc{\cW}{{\mathcal{W}}}
+
+%% Blackboard letters
+\nc{\bA}{{\mathbb{A}}}
+\nc{\bC}{{\mathbb{C}}}
+\nc{\bP}{{\mathbb{P}}}
+\nc{\bQ}{{\mathbb{Q}}}
+\nc{\bZ}{{\mathbb{Z}}}
+
+
+% hyperref 
+\usepackage[urlcolor=blue]{hyperref}
+
+\title{The title}
+\author[J.~Doe]{John Doe}
+\address{New York City}
+\email{john@gmail.com}
+\date{\today}
+\begin{document}
+
+\begin{abstract}
+    Abstract
+\end{abstract}
+\maketitle
+\section{Introduction}
+test
+% \bibliographystyle{amsalpha}
+% \bibliography{../bib/note}
+
+\end{document}
