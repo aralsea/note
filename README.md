@@ -8,7 +8,7 @@ vscode拡張機能のlatex-workshopが快適に動くような環境を自動設
   https://www.rust-lang.org/tools/install
 - vscode
   ``` bash
-  brew install --caks visual-studio-code
+  brew install --cask visual-studio-code
   ```
 - Texlive
   ``` bash
