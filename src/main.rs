@@ -4,6 +4,7 @@ use once_cell::sync::OnceCell;
 use regex::Regex;
 use serde::de;
 use serde::{Deserialize, Serialize};
+
 use std::alloc::GlobalAlloc;
 use std::collections::HashMap;
 use std::env;
@@ -124,26 +125,14 @@ enum Language {
 }
 #[derive(Debug, Serialize, Deserialize)]
 struct VscodeSetting {
-    #[serde(rename = "editor.formatOnSave")]
-    editor_format_on_save: bool,
-
-    #[serde(rename = "editor.defaultFormatter")]
-    editor_default_formatter: String,
-
-    #[serde(rename = "latex-workshop.latexindent.path")]
-    latex_workshop_latexindent_path: String,
-
-    #[serde(rename = "latex-workshop.latex.autoBuild.run")]
-    latex_workshop_latex_auto_build_run: String,
-
-    #[serde(rename = "latex-workshop.latex.recipe.default")]
-    latex_workshop_latex_recipe_default: String,
-
     #[serde(rename = "latex-workshop.latex.tools")]
     latex_workshop_latex_tools: Vec<LatexTool>,
 
     #[serde(rename = "latex-workshop.latex.outDir")]
     latex_workshop_latex_out_dir: String,
+
+    #[serde(flatten)]
+    other_fields: HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
