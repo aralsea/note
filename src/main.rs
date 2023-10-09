@@ -1,5 +1,6 @@
 #![allow(unused)]
 use clap::{Args, Parser, Subcommand, ValueEnum};
+use fs_extra::file;
 use once_cell::sync::OnceCell;
 use regex::Regex;
 use serde::de;
@@ -15,7 +16,6 @@ use std::io::ErrorKind;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process;
-
 const NOTE_PATH: &str = ".note";
 const CONFIG_JSON_PATH: &str = ".note/config.json";
 const SETTINGS_JSON_PATH: &str = ".note/templates/.vscode/settings.json";
@@ -26,6 +26,7 @@ const JA_TEMPLATE_PATH: &str = ".note/templates/src/ja_template.tex";
 const EN_TEMPLATE_PATH: &str = ".note/templates/src/en_template.tex";
 const BIB_PATH: &str = ".note/templates/bib/template.bib";
 const GITIGNORE_PATH: &str = ".note/templates/.gitignore";
+const README_PATH: &str = ".note/templates/README.md";
 
 const SUB_DIRECTORIES: [&str; 4] = [".vscode", "src", "out", "bib"];
 #[derive(Debug, Parser)]
@@ -90,6 +91,7 @@ fn create_project(args: &NewArgs) {
     prepare_tex_file(&project);
     prepare_bib_file(&project);
     prepare_gitignore(&project);
+    prepare_readme(&project);
     print!(
         "Success! 🎉\n\n\
     A LaTeX-ready directory has been created for you.\n\
@@ -257,6 +259,36 @@ fn prepare_gitignore(project: &Project) -> std::io::Result<()> {
 
     let destination_file_path = project.path.join(".gitignore");
 
+    let mut file = fs::File::create(destination_file_path)?;
+    file.write_all(file_content.as_bytes());
+    return Ok(());
+}
+
+fn uppercase_first(data: &str) -> String {
+    // Uppercase first letter.
+    let mut result = String::new();
+    let mut first = true;
+    for value in data.chars() {
+        if first {
+            result.push(value.to_ascii_uppercase());
+            first = false;
+        } else {
+            result.push(value);
+        }
+    }
+    result
+}
+
+fn prepare_readme(project: &Project) -> std::io::Result<()> {
+    let home_dir_str = env::var("HOME").unwrap();
+    let home_dir = Path::new(&home_dir_str);
+    let mut file_content = fs::read_to_string(home_dir.join(README_PATH)).unwrap();
+    file_content =
+        file_content.replace("CAPITALIZED_PROJECT_NAME", &uppercase_first(&project.name));
+    file_content = file_content.replace("PROJECT_NAME", &project.name);
+    file_content = file_content.replace("SOURCE_FILE", &project.name);
+
+    let destination_file_path = project.path.join("README.md");
     let mut file = fs::File::create(destination_file_path)?;
     file.write_all(file_content.as_bytes());
     return Ok(());
