@@ -25,7 +25,7 @@ vscode拡張機能のlatex-workshopが快適に動くような環境を自動設
 ``` bash
 cargo install --git https://github.com/aralsea/note
 ```
-- `~/.note` ディレクトリが作成され、そこに設定ファイルやテンプレートファイルが保存される
+- `~/.note` ディレクトリと`~/.indentconfig.yaml`が作成され、そこに設定ファイルやテンプレートファイルが保存される
 
 ## Usage
 - `note new PROJECT_NAME`: カレントディレクトリに`PROJECT_NAME`ディレクトリが作成され、latex-workshopが動く環境が構成される

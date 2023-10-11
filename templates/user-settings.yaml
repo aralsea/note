@@ -1,0 +1,19 @@
+defaultIndent: "\t"
+onlyOneBackUp: 1
+indentRules:
+  leftRightAutoSizeBrackets: "  "
+specialBeginEnd:
+  leftRightAutoSizeBrackets:
+    begin: '\\left(?:\(|\[|\\\{|\.|\\l)'
+    end: '\\right(?:\)|\]|\\\}|\.|\\r)'
+    lookForThis: 1
+replacements:
+  - amalgamate: 1
+  - this: "　"
+    that: " "
+    lookForThis: 1
+  - # Be sure to set it last
+    # Combine 2 or more "half-width spaces" into 1
+    substitution: s/\h+/ /g
+    lookForThis: 1
+    when: before
