@@ -11,7 +11,8 @@ use std::io::ErrorKind;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process;
-const CONFIG_JSON_PATH: &str = ".note/config.json";
+const CONFIG_JSON_PATH: &str = ".note/.note_config.json";
+const LOCAL_CONFIG_JSON_PATH: &str = ".note_config.json";
 const SETTINGS_JSON_PATH: &str = ".note/templates/.vscode/settings.json";
 const JA_LATEXMKRC_PATH: &str = ".note/templates/.ja_latexmkrc";
 const EN_LATEXMKRC_PATH: &str = ".note/templates/.en_latexmkrc";
@@ -51,6 +52,8 @@ struct NewArgs {
 
 #[derive(Debug, Args)]
 struct ConfigArgs {
+    #[arg(long, help = "Set or show the local configurations")]
+    local: bool,
     #[arg(
         long = "author",
         help = "Set the default author name for newly created documents"
@@ -66,18 +69,25 @@ struct ConfigArgs {
 }
 
 fn main() {
-    Config::load_config();
     let cli = Cli::parse();
     match cli.command {
-        Commands::New(args) => create_project(&args),
+        Commands::New(args) => {
+            Config::load_config(Scope::Local);
+            create_project(&args)
+        }
         Commands::Config(args) => {
-            if let Some(author_name) = &args.author_name {
-                set_author_name(author_name);
+            let scope = if args.local {
+                Scope::Local
+            } else {
+                Scope::Global
+            };
+            Config::load_config(scope);
+            let config = get_new_config(args);
+            config.save_to_file();
+            if scope == Scope::Local && config.scope == Scope::Global {
+                println!("Local config not found.")
             }
-            if let Some(language) = args.language {
-                set_language(language);
-            }
-            show_config();
+            println!("Current config: {:#?}", config);
         }
     }
 }
@@ -236,7 +246,7 @@ fn prepare_tex_file(project: &Project) {
     file_content = re
         .replace_all(
             &file_content,
-            &format!(r"\author{{{}}}", Config::global().author_name),
+            &format!(r"\author{{{}}}", Config::get().author_name),
         )
         .to_string();
 
@@ -305,52 +315,95 @@ fn prepare_readme(project: &Project) {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Config {
+    scope: Scope,
+
     #[serde(default)]
     author_name: String,
 
     #[serde(default)]
     language: Language,
 }
+
+#[derive(Debug, Copy, Clone, Serialize, Deserialize, PartialEq)]
+enum Scope {
+    Global,
+    Local,
+}
 static CONFIG: OnceCell<Config> = OnceCell::new();
 
 impl Config {
-    fn global() -> &'static Config {
+    fn get() -> &'static Config {
         CONFIG.get().expect("Config is not initialized")
     }
 
-    fn default() -> Config {
+    fn global_default() -> Config {
         Config {
             author_name: String::default(),
             language: Language::Japanese,
+            scope: Scope::Global,
         }
     }
-    fn path() -> PathBuf {
-        let home_dir = env::var("HOME").unwrap();
 
-        PathBuf::from(&home_dir).join(CONFIG_JSON_PATH)
-    }
-    fn create_config_file() {
-        // CONFIG_PATHを新規作成する
-        let config = Config::default();
-        CONFIG
-            .set(Config::default())
-            .expect("Config has already been initialized.");
+    fn create_global_config_file() {
+        let config = Config::global_default();
         config.save_to_file();
+        CONFIG
+            .set(config)
+            .expect("Config has already been initialized.");
     }
+
     fn save_to_file(&self) {
         let file_content: String = serde_json::to_string_pretty(self).unwrap();
-        let destination_file_path = Config::path();
-
-        let mut file =
-            fs::File::create(destination_file_path).expect("Failed to save the config file.");
+        let config_file_path = match self.scope {
+            Scope::Global => {
+                let home_dir = env::var("HOME").unwrap();
+                PathBuf::from(&home_dir).join(CONFIG_JSON_PATH)
+            }
+            Scope::Local => {
+                let current_dir = env::current_dir().unwrap();
+                PathBuf::from(&current_dir).join(LOCAL_CONFIG_JSON_PATH)
+            }
+        };
+        let mut file = fs::File::create(config_file_path).expect("Failed to save the config file.");
         file.write_all(file_content.as_bytes()).unwrap();
     }
 
-    fn load_config() {
-        let config_file = match fs::File::open(Config::path()) {
+    fn load_local_config() -> Result<(), std::io::Error> {
+        let current_path = env::current_dir().unwrap();
+        let config_file = match fs::File::open(current_path.join(LOCAL_CONFIG_JSON_PATH)) {
+            Ok(config_file) => config_file,
+            Err(error) => {
+                return Err(error);
+            }
+        };
+        let reader = BufReader::new(config_file);
+        let config: Config = serde_json::from_reader(reader).unwrap();
+        CONFIG.set(config).unwrap();
+        return Ok(());
+    }
+
+    /// scope = Scope::Localのときはlocalのconfigを読みに行き、なければglobalを読む
+    fn load_config(scope: Scope) {
+        if scope == Scope::Local {
+            match Config::load_local_config() {
+                Ok(_) => return,
+                Err(error) if error.kind() == ErrorKind::NotFound => {}
+                Err(error) => {
+                    panic!(
+                        "There was a problem opening the local config file: {:?}",
+                        error
+                    )
+                }
+            }
+        }
+
+        let home_dir = env::var("HOME").unwrap();
+        let config_file_path = PathBuf::from(&home_dir).join(CONFIG_JSON_PATH);
+
+        let config_file = match fs::File::open(config_file_path) {
             Ok(config_file) => config_file,
             Err(ref error) if error.kind() == ErrorKind::NotFound => {
-                Config::create_config_file();
+                Config::create_global_config_file();
                 return;
             }
             Err(error) => {
@@ -363,20 +416,29 @@ impl Config {
     }
 }
 
-fn show_config() {
-    println!("{:#?}", Config::global());
-}
-fn set_author_name(author_name: &str) {
-    let new_config = Config {
-        author_name: author_name.to_string(),
-        ..Config::global().clone()
+/// 現在のconfigをargsに従って変更したものを返す
+/// argsにscope以外に変更の指定がなければ何もしない
+/// 特にscopeも変更しない
+fn get_new_config(args: ConfigArgs) -> Config {
+    let scope = if args.local {
+        Scope::Local
+    } else {
+        Scope::Global
     };
-    new_config.save_to_file();
-}
-fn set_language(language: Language) {
-    let new_config = Config {
-        language,
-        ..Config::global().clone()
-    };
-    new_config.save_to_file();
+    let mut config = Config::get().clone();
+    if let Some(author_name) = &args.author_name {
+        config = Config {
+            scope,
+            author_name: author_name.to_string(),
+            ..config
+        };
+    }
+    if let Some(language) = args.language {
+        config = Config {
+            scope,
+            language,
+            ..config
+        };
+    }
+    return config;
 }
