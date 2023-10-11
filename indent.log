@@ -1,0 +1,48 @@
+INFO:  latexindent version 3.23.2, 2023-09-23, a script to indent .tex files
+       latexindent lives here: /usr/local/texlive/2023/texmf-dist/scripts/latexindent/
+       Wed Oct 11 20:49:55 2023
+       Reading input from STDIN
+INFO:  Processing switches:
+INFO:  Directory for backup files and indent.log:
+       .
+INFO:  YAML settings read: defaultSettings.yaml
+       Reading defaultSettings.yaml from /usr/local/texlive/2023/texmf-dist/scripts/latexindent/defaultSettings.yaml
+INFO:  YAML reading settings
+       The config file in "/Users/araihayato/.indentconfig.yaml" will be read
+       Reading path information from /Users/araihayato/.indentconfig.yaml
+       ---
+       paths:
+         - /Users/araihayato/.note/templates/user-settings.yaml
+
+INFO:  YAML settings, reading from the following files:
+       Reading USER settings from /Users/araihayato/.note/templates/user-settings.yaml
+       ---
+       defaultIndent: "\t"
+       indentRules:
+         leftRightAutoSizeBrackets: '  '
+       onlyOneBackUp: '1'
+       replacements:
+         -
+           lookForThis: '1'
+           that: ' '
+           this: '　'
+         -
+           lookForThis: '1'
+           substitution: 's/\h+/ /g'
+           when: before
+       specialBeginEnd:
+         leftRightAutoSizeBrackets:
+           begin: \\left(?:\(|\[|\\\{|\.|\\l)
+           end: \\right(?:\)|\]|\\\}|\.|\\r)
+           lookForThis: '1'
+
+INFO:  Phase 1: searching for objects
+       No objects found.
+INFO:  Phase 2: finding surrounding indentation
+INFO:  Phase 3: indenting objects
+INFO:  Phase 4: final indentation check
+INFO:  Output routine:
+       Not outputting to file; see -w and -o switches for more options.
+       --------------
+INFO:  Please direct all communication/issues to:
+        https://github.com/cmhughes/latexindent.pl

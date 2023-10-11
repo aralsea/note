@@ -12,8 +12,8 @@ replacements:
   - this: "　"
     that: " "
     lookForThis: 1
-  - # Be sure to set it last
-    # Combine 2 or more "half-width spaces" into 1
-    substitution: s/\h+/ /g
+
+  - substitution: s/\h+/ /g
     lookForThis: 1
     when: before
+  # Be sure to set it last Combine 2 or more "half-width spaces" into 1
