@@ -12,7 +12,6 @@ replacements:
   - this: "　"
     that: " "
     lookForThis: 1
-
   - substitution: s/\h+/ /g
     lookForThis: 1
     when: before
