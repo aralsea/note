@@ -3,7 +3,7 @@
 vscode拡張機能のlatex-workshopが快適に動くような環境を自動設定するツールです。
 
 ## Requirements
-- MacOS
+- Mac/Linux
 - rust
   https://www.rust-lang.org/tools/install
 - vscode + latex-workshop
