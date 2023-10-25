@@ -306,7 +306,7 @@ fn prepare_readme(project: &Project) {
     file_content =
         file_content.replace("CAPITALIZED_PROJECT_NAME", &uppercase_first(&project.name));
     file_content = file_content.replace("PROJECT_NAME", &project.name);
-    file_content = file_content.replace("SOURCE_FILE", &project.name);
+    //file_content = file_content.replace("SOURCE_FILE", &project.name);
 
     let destination_file_path = project.path.join("README.md");
     let mut file = fs::File::create(destination_file_path).unwrap();

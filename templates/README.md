@@ -1,11 +1,11 @@
 # CAPITALIZED_PROJECT_NAME
 ## How to compile the source files
-Run
+Clone this repository and run
 ``` bash
-latexmk src/SOURCE_FILE.tex
+latexmk src/*.tex
 ```
 in the `PROJECT_NAME` directory or run
 ``` bash
-cd latexmk -r ../.latexmkrc SOURCE_FILE.tex
+cd latexmk -r ../.latexmkrc *.tex
 ```
 in the `PROJECT_NAME/src` directory.
